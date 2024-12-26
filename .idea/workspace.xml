@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="13337a1a-e7e8-42a5-82b2-c6e2704eb8aa" name="Changes" comment="My job was to do interpreter which would transfer Golang &quot;for&quot; loop code to java code and execute it. by using this code we can execute algorithms like sum of first N numbers, factorial and others but to complete our task fully we need &quot;for&quot; and &quot;if&quot; interpreter to work together in one code. so that's what we will try to do tomorrow.">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="13337a1a-e7e8-42a5-82b2-c6e2704eb8aa" name="Changes" comment="My job was to do interpreter which would transfer Golang &quot;for&quot; loop code to java code and execute it. by using this code we can execute algorithms like sum of first N numbers, factorial and others but to complete our task fully we need &quot;for&quot; and &quot;if&quot; interpreter to work together in one code. so that's what we will try to do tomorrow." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -49,8 +47,27 @@
       <option name="project" value="LOCAL" />
       <updated>1735244914254</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="My job was to do interpreter which would transfer Golang &quot;for&quot; loop code to java code and execute it. by using this code we can execute algorithms like sum of first N numbers, factorial and others but to complete our task fully we need &quot;for&quot; and &quot;if&quot; interpreter to work together in one code. so that's what we will try to do tomorrow.">
+      <option name="closed" value="true" />
+      <created>1735245734384</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1735245734384</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="My job was to do interpreter which would transfer Golang &quot;for&quot; loop code to java code and execute it. by using this code we can execute algorithms like sum of first N numbers, factorial and others but to complete our task fully we need &quot;for&quot; and &quot;if&quot; interpreter to work together in one code. so that's what we will try to do tomorrow." />
