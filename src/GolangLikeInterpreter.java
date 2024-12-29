@@ -5,81 +5,124 @@ public class GolangLikeInterpreter {
     private final Map<String, Integer> variables = new HashMap<>(); // Variable storage
 
     public void eval(String code) {
-        String[] lines = code.split("\\n"); // Split by lines instead of semicolon
+        String[] lines = code.split("\\n"); // Split by newlines for multi-line code
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
             if (line.isEmpty()) continue;
 
-            // Handle variable declaration
             if (line.startsWith("var")) {
                 handleVariableDeclaration(line);
-            } else if (line.contains("=")) {
-                handleAssignment(line);
-            }
-            // Handle if conditionals
-            else if (line.startsWith("if")) {
+            } else if (line.startsWith("for")) {
+                i = handleForLoop(lines, i);
+            } else if (line.startsWith("if")) {
                 i = handleIf(lines, i);
-            }
-            // Handle print statements
-            else if (line.startsWith("print")) {
+            } else if (line.startsWith("print")) {
                 handlePrint(line);
+            } else if (line.contains("=") || line.endsWith("++") || line.endsWith("--")) {
+                handleAssignment(line);
             }
         }
     }
 
     private void handleVariableDeclaration(String line) {
-        // Example: var x = 10;
         String[] parts = line.split("=");
-        String varName = parts[0].replace("var", "").trim();
-        String rawValue = parts[1].trim();
-
-        // Remove any extra characters (e.g., semicolons) and parse to integer
-        String sanitizedValue = rawValue.replaceAll("[^\\d-]", ""); // Keep only digits and minus sign
-        int value = Integer.parseInt(sanitizedValue);
+        String varName = parts[0].replace("var", "").replace(";", "").trim();
+        int value = 0; // Default value for uninitialized variables
+        if (parts.length > 1) {
+            String valueString = parts[1].replace(";", "").trim();
+            try {
+                // Try to parse the value as an integer
+                value = Integer.parseInt(valueString);
+            } catch (NumberFormatException e) {
+                // If NumberFormatException occurs, evaluate the expression
+                value = evaluateExpression(valueString);
+            }
+        }
         variables.put(varName, value);
     }
 
     private void handleAssignment(String line) {
-        // Example: x = x + 5
-        String[] parts = line.split("=");
-        String varName = parts[0].trim();
-        String expression = parts[1].trim();
-
-        // Evaluate the right-hand expression
-        int value = evaluateExpression(expression);
-        variables.put(varName, value);
-    }
-
-    private int evaluateExpression(String expression) {
-        // Supported operators: +, -, *, /, %
-        if (expression.contains("+")) {
-            String[] tokens = expression.split("\\+");
-            return evaluateToken(tokens[0]) + evaluateToken(tokens[1]);
-        } else if (expression.contains("-")) {
-            String[] tokens = expression.split("-");
-            return evaluateToken(tokens[0]) - evaluateToken(tokens[1]);
-        } else if (expression.contains("*")) {
-            String[] tokens = expression.split("\\*");
-            return evaluateToken(tokens[0]) * evaluateToken(tokens[1]);
-        } else if (expression.contains("/")) {
-            String[] tokens = expression.split("/");
-            return evaluateToken(tokens[0]) / evaluateToken(tokens[1]);
-        } else if (expression.contains("%")) {
-            String[] tokens = expression.split("%");
-            return evaluateToken(tokens[0]) % evaluateToken(tokens[1]);
+        if (line.contains("=")) {
+            String[] parts = line.split("=");
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("Invalid assignment statement: " + line);
+            }
+            String varName = parts[0].replace(";", "").trim();
+            String expression = parts[1].replace(";", "").trim();
+            int value = evaluateExpression(expression);
+            variables.put(varName, value);
+        } else if (line.endsWith("++")) {
+            String varName = line.replace("++", "").replace(";", "").trim();
+            if (!variables.containsKey(varName)) {
+                throw new IllegalArgumentException("Variable not initialized: " + varName);
+            }
+            variables.put(varName, variables.get(varName) + 1);
+        } else if (line.endsWith("--")) {
+            String varName = line.replace("--", "").replace(";", "").trim();
+            if (!variables.containsKey(varName)) {
+                throw new IllegalArgumentException("Variable not initialized: " + varName);
+            }
+            variables.put(varName, variables.get(varName) - 1);
         } else {
-            return evaluateToken(expression);
+            throw new IllegalArgumentException("Unsupported assignment statement: " + line);
         }
     }
 
-    private int evaluateToken(String token) {
-        token = token.trim();
-        if (variables.containsKey(token)) {
-            return variables.get(token);
+    private int handleForLoop(String[] lines, int currentIndex) {
+        String forLine = lines[currentIndex].trim();
+
+        if (forLine.contains(";")) {
+            // Traditional for loop: for i = 1; i <= a; i++
+            String[] parts = forLine.substring(forLine.indexOf("for") + 3, forLine.indexOf("{")).trim().split(";");
+            String initialization = parts[0].trim();
+            String condition = parts[1].trim();
+            String increment = parts[2].trim();
+            handleAssignment(initialization);
+
+            int i = currentIndex + 1;
+            while (evaluateCondition(condition)) {
+                int blockStart = i;
+                while (i < lines.length && !lines[i].trim().equals("}")) {
+                    String line = lines[i].trim();
+                    if (line.startsWith("if")) {
+                        i = handleIf(lines, i);
+                    } else {
+                        eval(line);
+                        i++;
+                    }
+                }
+                handleAssignment(increment);
+                i = blockStart;
+            }
+            while (i < lines.length && !lines[i].trim().equals("}")) {
+                i++;
+            }
+            return i; // Move to the next line after the closing brace
         } else {
-            return Integer.parseInt(token);
+            // Condition-only for loop: for num != 0
+            String condition = forLine.substring(forLine.indexOf("for") + 3, forLine.indexOf("{")).trim();
+
+            int i = currentIndex + 1;
+            while (evaluateCondition(condition)) {
+                int blockStart = i;
+                while (i < lines.length && !lines[i].trim().equals("}")) {
+                    String line = lines[i].trim();
+                    if (line.startsWith("if")) {
+                        i = handleIf(lines, i);
+                    } else {
+                        eval(line);
+                        i++;
+                    }
+                }
+                i = blockStart;
+            }
+            while (i < lines.length && !lines[i].trim().equals("}")) {
+                i++;
+            }
+            return i; // Move to the next line after the closing brace
         }
     }
+
 
     private int handleIf(String[] lines, int currentIndex) {
         // Example: if x > 5 { ... }
@@ -91,46 +134,83 @@ public class GolangLikeInterpreter {
         if (conditionResult) {
             // Execute the block inside the if statement
             while (i < lines.length && !lines[i].trim().equals("}")) {
-                eval(lines[i].trim());
-                i++;
+                String line = lines[i].trim();
+                if (line.startsWith("for")) {
+                    i = handleForLoop(lines, i);
+                } else {
+                    eval(line);
+                    i++;
+                }
             }
         } else {
-            // Skip to the end of the block
+            // Skip the block if the condition is false
             while (i < lines.length && !lines[i].trim().equals("}")) {
                 i++;
             }
         }
-        return i;
+        return i; // Move to the next line after the closing brace
     }
 
+
+
     private boolean evaluateCondition(String condition) {
-        // Example: x > 5
-        if (condition.contains(">")) {
-            String[] tokens = condition.split(">");
-            return evaluateToken(tokens[0]) > evaluateToken(tokens[1]);
+        if (condition.contains("<=")) {
+            String[] tokens = condition.split("<=");
+            return getValue(tokens[0]) <= getValue(tokens[1]) || getValue(tokens[0]) <= Integer.parseInt(tokens[1].trim());
         } else if (condition.contains("<")) {
             String[] tokens = condition.split("<");
-            return evaluateToken(tokens[0]) < evaluateToken(tokens[1]);
-        } else if (condition.contains("==")) {
-            String[] tokens = condition.split("==");
-            return evaluateToken(tokens[0]) == evaluateToken(tokens[1]);
-        } else if (condition.contains("!=")) {
-            String[] tokens = condition.split("!=");
-            return evaluateToken(tokens[0]) != evaluateToken(tokens[1]);
+            return getValue(tokens[0]) < getValue(tokens[1]) || getValue(tokens[0]) < Integer.parseInt(tokens[1].trim());
         } else if (condition.contains(">=")) {
             String[] tokens = condition.split(">=");
-            return evaluateToken(tokens[0]) >= evaluateToken(tokens[1]);
-        } else if (condition.contains("<=")) {
-            String[] tokens = condition.split("<=");
-            return evaluateToken(tokens[0]) <= evaluateToken(tokens[1]);
+            return getValue(tokens[0]) <= getValue(tokens[1]) || getValue(tokens[0]) >= Integer.parseInt(tokens[1].trim());
+        } else if (condition.contains(">")) {
+            String[] tokens = condition.split(">");
+            return getValue(tokens[0]) > getValue(tokens[1]) || getValue(tokens[0]) > Integer.parseInt(tokens[1].trim());
+        } else if (condition.contains("==")) {
+            String[] tokens = condition.split("==");
+            return getValue(tokens[0]) == getValue(tokens[1]) || getValue(tokens[0]) == Integer.parseInt(tokens[1].trim());
+        }
+        throw new RuntimeException("Unsupported condition: " + condition);
+
+
+    }
+
+    private int evaluateExpression(String expression) {
+        if (expression.contains("+")) {
+            String[] tokens = expression.split("\\+");
+            return getValue(tokens[0]) + getValue(tokens[1]);
+        } else if (expression.contains("-")) {
+            String[] tokens = expression.split("-");
+            return getValue(tokens[0]) - getValue(tokens[1]);
+        } else if (expression.contains("*")) {
+            String[] tokens = expression.split("\\*");
+            return getValue(tokens[0]) * getValue(tokens[1]);
+        } else if (expression.contains("/")) {
+            String[] tokens = expression.split("/");
+            return getValue(tokens[0]) / getValue(tokens[1]);
+        } else if (expression.contains("%")) {
+            String[] tokens = expression.split("%");
+            return getValue(tokens[0]) % getValue(tokens[1]);
         } else {
-            throw new RuntimeException("Unsupported condition: " + condition);
+            return getValue(expression);
         }
     }
 
+
+    private int getValue(String token) {
+        token = token.replace(";", "").trim();
+        if (variables.containsKey(token)) {
+            return variables.get(token);
+        } else {
+            return Integer.parseInt(token);
+        }
+    }
+
+
+
+
     private void handlePrint(String line) {
-        // Example: print(x)
-        String varName = line.substring(line.indexOf('(') + 1, line.indexOf(')')).trim();
+        String varName = line.substring(line.indexOf('(') + 1, line.indexOf(')')).replace(";", "").trim();
         if (variables.containsKey(varName)) {
             System.out.println(variables.get(varName));
         } else {
@@ -141,15 +221,25 @@ public class GolangLikeInterpreter {
     public static void main(String[] args) {
         GolangLikeInterpreter interpreter = new GolangLikeInterpreter();
 
-        // Example program using Golang-like syntax
-        String program = """
-            var x = 10;
-            var y = 5;
-            if x > y {
-                print(x);
-            }
-        """;
 
-        interpreter.eval(program); // Outputs: 10
+
+        String program = """
+
+
+        """;
+        interpreter.eval(program);
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
